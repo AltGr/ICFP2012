@@ -1,15 +1,23 @@
-type pos = int * int
+module T: sig
+  type pos = int * int
 
-type square = Robot | Wall | Rock | Lambda | Lift | Earth | Empty
+  type square = Robot | Wall | Rock | Lambda | Lift | Earth | Empty
 
-type mine = {
-  grid: square array;
-  length: int;
-  height: int;
-  robot: pos;
-  lift: pos;
-  nlambdas: int;
-}
+  type mine = {
+    grid: square array;
+    length: int;
+    height: int;
+    robot: pos;
+    lift: pos;
+    nlambdas: int;
+    collected: int;
+    score: int;
+  }
+end
+
+open T
+
+val copy: mine -> mine
 
 val parse: unit -> mine
 
@@ -18,6 +26,10 @@ val check: mine -> bool
 val get: mine -> pos -> square
 
 val set: mine -> pos -> square -> mine
+
+val iteri: (pos -> square -> unit) -> mine -> unit
+
+val mapi: (pos -> square -> square) -> mine -> mine
 
 val fold: ('acc -> square -> 'acc) -> 'acc -> mine -> 'acc
 

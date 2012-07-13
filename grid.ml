@@ -10,6 +10,8 @@ module T = struct
     robot: pos;
     lift: pos;
     nlambdas: int;
+    collected: int;
+    score: int;
   }
 end
 
@@ -68,7 +70,7 @@ let parse () =
   in
   let grid = Array.concat (aux []) in
   let length = !length_ref in
-  let height = Array.length grid in
+  let height = Array.length grid / length in
   let robot =
     let abs = array_find_one (function Robot -> true | _ -> false) grid in
     abs mod length, abs / length
@@ -81,17 +83,23 @@ let parse () =
     Array.fold_left
       (fun acc -> function Lambda -> succ acc | _ -> acc) 0 grid
   in
-  { grid; length; height; robot; lift; nlambdas }
+  { grid; length; height; robot; lift; nlambdas; collected = 0; score = 0 }
 
 let get mine (x,y) =
-  assert (x < mine.length && y < mine.height);
+  if x < 0 || mine.length <= x || y < 0 || mine.height <= y
+  then raise (Invalid_argument "Grid.get: bad coords");
   mine.grid.(y * mine.length + x)
 
 let set mine (x,y) square =
-  assert (x < mine.length && y < mine.height);
+  if x < 0 || mine.length <= x || y < 0 || mine.height <= y
+  then raise (Invalid_argument "Grid.set: bad coords");
   let mine' = copy mine in
   mine'.grid.(y * mine.length + x) <- square;
   mine'
+
+let iteri f mine = Array.iteri (fun i -> f (i mod mine.length, i / mine.length)) mine.grid
+
+let mapi f mine = assert false (* Array.mapi f mine.grid *)
 
 let fold f acc mine = Array.fold_left f acc mine.grid
 
@@ -113,6 +121,6 @@ let to_string mine =
   string_init ((mine.length + 1) * mine.height)
     (fun i ->
       let x = i mod (mine.length + 1) in
-      let y = i / (mine.length + 1) in
+      let y = mine.height - i / (mine.length + 1) - 1 in
       if x = mine.length then '\n'
       else square_to_char (get mine (x,y)))
