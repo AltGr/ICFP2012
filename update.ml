@@ -20,7 +20,17 @@ let update_square mine mine' (x,y) square =
     end
   | _ -> ()
 
+let isdead mine mine' =
+  let (x,y) = mine.robot in
+  try
+    if Grid.get mine (x,y+1) = Empty && Grid.get mine' (x,y+1) = Rock then true
+    else false
+  with Invalid_argument _ -> false
+
+exception Dead
+
 let update mine =
   let mine' = Grid.copy mine in
   Grid.iteri (update_square mine mine') mine;
+  if isdead mine mine' then raise Dead;
   mine'

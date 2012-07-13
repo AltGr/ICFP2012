@@ -16,7 +16,11 @@ let rec loop mine =
   print_string (Grid.to_string mine);
   Printf.printf "(Score:%d) Move> " mine.score;
   flush stdout;
-  let move = try Scanf.scanf "%c\n" Moves.char_to_move with Invalid_argument _ -> Moves.Wait in
+  let move =
+    try Scanf.scanf "%c\n" Moves.char_to_move with
+    | Invalid_argument _ -> Moves.Wait
+    | _ -> Moves.Abort
+  in
   let move = if Moves.is_valid mine move then move else Moves.Wait in
   let mine =
     try Moves.apply mine move
@@ -30,6 +34,13 @@ let rec loop mine =
       Printf.eprintf "Aborted ; Score: %d\n" score;
       exit 0
   in
-  loop (Update.update { mine with score = pred (mine.score) })
+  let mine =
+    try Update.update { mine with score = pred (mine.score) }
+    with
+    | Update.Dead ->
+      Printf.eprintf "You're dead ! Score: %d\n" mine.score;
+      exit 0
+  in
+  loop mine
 
 let _ = loop init_mine
