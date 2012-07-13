@@ -19,7 +19,7 @@ open T
 
 val copy: mine -> mine
 
-val parse: unit -> mine
+val parse: in_channel -> mine
 
 val check: mine -> bool
 

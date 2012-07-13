@@ -3,9 +3,14 @@
 
 open Grid.T
 
-let init_mine = Grid.parse ()
-
-let _ = Printf.eprintf "Map parsed !\n\n"
+let init_mine =
+  if Array.length Sys.argv > 1 then
+    let f = open_in Sys.argv.(1) in
+    let g = Grid.parse f in
+    close_in f;
+    g
+  else
+    Grid.parse stdin
 
 let rec loop mine =
   print_string (Grid.to_string mine);

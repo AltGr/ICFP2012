@@ -53,23 +53,28 @@ let array_find_one f a =
   | (true, i) -> i
   | _ -> raise Not_found
 
-let parse () =
+let parse chan =
   let length_ref = ref 0 in
   let rec aux acc =
-    let optline = try Some (input_line stdin) with End_of_file -> None in
+    let optline = try Some (input_line chan) with End_of_file -> None in
     match optline with
     | Some line when String.length line > 0 ->
       let len = String.length line in
-      assert (!length_ref = 0 || !length_ref = len);
-      length_ref := len;
+      length_ref := max !length_ref len;
       let arr =
         Array.init len (fun i -> char_to_square line.[i])
       in
       aux (arr::acc)
     | _ -> acc
   in
-  let grid = Array.concat (aux []) in
+  let lines = aux [] in
   let length = !length_ref in
+  let lines = (* add padding *)
+    List.map
+      (fun a -> let a' = Array.make length Empty in Array.blit a 0 a' 0 (Array.length a); a')
+      lines
+  in
+  let grid = Array.concat lines in
   let height = Array.length grid / length in
   let robot =
     let abs = array_find_one (function Robot -> true | _ -> false) grid in
