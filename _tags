@@ -1,2 +1,2 @@
-true: debut
+true: debug
 <ocaml/**>: include
