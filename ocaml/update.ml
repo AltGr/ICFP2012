@@ -36,16 +36,16 @@ let update mine0 =
   let (x,y) = mine.robot in
   let metadata = mine.metadata in
   let metadata = {
-    metadata with water =
-      if mine.moves mod metadata.flooding = 0
-      then succ metadata.water
-      else metadata.water
-  } in
-  let metadata = {
     metadata with waterproof_current =
       if y < metadata.water
       then pred metadata.waterproof_current
       else metadata.waterproof
+  } in
+  let metadata = {
+    metadata with water =
+      if metadata.flooding > 0 && mine.moves mod metadata.flooding = 0
+      then succ metadata.water
+      else metadata.water
   } in
   let mine = { mine with metadata } in
   if isdead mine0 mine then raise Dead;
