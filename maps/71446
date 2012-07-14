@@ -1,0 +1,50 @@
+<!DOCTYPE HTML>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><link rel="stylesheet" type="text/css" href="/css/amelie.css"><script type="text/javascript" src="/js/jquery.js"></script><script type="text/javascript" src="/js/amelie.js"></script><script type="text/javascript" src="/js/highlight.pack.js"></script><title>Puzzle 2 :: hpaste — Haskell Pastebin</title><script>hljs.tabReplace = '    ';hljs.initHighlightingOnLoad();</script></head><body id="paste"><div class="amelie-wrap"><div class="amelie-nav"><a href="/activity">Changelog</a></div><a href="/" title="Back to home"><img class="amelie-logo" src="/css/hpaste.png"></a><div class="amelie-section amelie-section-dark"><div class="amelie-paste-nav"><a href="/steps/71446">Steps</a> - <a href="/edit/71446">Annotate</a> - <a href="/report/71446">Report/Delete</a></div><h2>Puzzle 2</h2><ul class="amelie-paste-specs"><li><strong>Paste:</strong><a href="/71446">#71446</a></li><li><strong>Author:</strong>ems</li><li><strong>Language:</strong>Haskell</li><li><strong>Channel:</strong>- </li><li><strong>Created:</strong>2012-07-14 06:27:12 UTC</li><li><strong>Raw:</strong><a href="/raw/71446">View raw link</a></li></ul><div class="amelie-clear"></div></div><div class="amelie-section amelie-section-light"><table class="amelie-code"><td class="amelie-line-nums"><pre><a href="#line1" id="line1" name="line1">1</a>
+<a href="#line2" id="line2" name="line2">2</a>
+<a href="#line3" id="line3" name="line3">3</a>
+<a href="#line4" id="line4" name="line4">4</a>
+<a href="#line5" id="line5" name="line5">5</a>
+<a href="#line6" id="line6" name="line6">6</a>
+<a href="#line7" id="line7" name="line7">7</a>
+<a href="#line8" id="line8" name="line8">8</a>
+<a href="#line9" id="line9" name="line9">9</a>
+<a href="#line10" id="line10" name="line10">10</a>
+<a href="#line11" id="line11" name="line11">11</a>
+<a href="#line12" id="line12" name="line12">12</a>
+<a href="#line13" id="line13" name="line13">13</a>
+<a href="#line14" id="line14" name="line14">14</a>
+<a href="#line15" id="line15" name="line15">15</a>
+<a href="#line16" id="line16" name="line16">16</a>
+<a href="#line17" id="line17" name="line17">17</a>
+<a href="#line18" id="line18" name="line18">18</a>
+<a href="#line19" id="line19" name="line19">19</a>
+<a href="#line20" id="line20" name="line20">20</a>
+<a href="#line21" id="line21" name="line21">21</a>
+<a href="#line22" id="line22" name="line22">22</a>
+<a href="#line23" id="line23" name="line23">23</a>
+<a href="#line24" id="line24" name="line24">24</a>
+</pre></td><td><pre><span class='hs-cpp'>#########</span>
+<span class='hs-cpp'>###***###</span>
+<span class='hs-cpp'>###***###</span>
+<span class='hs-cpp'>###***###</span>
+<span class='hs-cpp'>###***###</span>
+<span class='hs-cpp'>###***###</span>
+<span class='hs-cpp'>###***###</span>
+<span class='hs-cpp'>#  .**\\#</span>
+<span class='hs-cpp'># # #*#\#</span>
+<span class='hs-cpp'># # #*#\#</span>
+<span class='hs-cpp'># # #*#\#</span>
+<span class='hs-cpp'># # #*#\#</span>
+<span class='hs-cpp'># # #*#\#</span>
+<span class='hs-cpp'>#    .#\#</span>
+<span class='hs-cpp'>###</span>   <span class='hs-varop'>**#</span>
+<span class='hs-cpp'>###</span> <span class='hs-conid'>R</span> <span class='hs-varop'>\\#</span>
+<span class='hs-cpp'>###</span>   <span class='hs-cpp'>#</span><span class='hs-conid'>L</span><span class='hs-cpp'>#</span>
+<span class='hs-cpp'>###</span>   <span class='hs-cpp'>###</span>
+<span class='hs-cpp'>###</span>   <span class='hs-cpp'>###</span>
+<span class='hs-cpp'>###</span>   <span class='hs-cpp'>###</span>
+<span class='hs-cpp'>###</span>   <span class='hs-cpp'>###</span>
+<span class='hs-cpp'>###</span>   <span class='hs-cpp'>###</span>
+<span class='hs-cpp'>###</span>   <span class='hs-cpp'>###</span>
+<span class='hs-cpp'>#########</span>
+</pre></td></table></div><div class="amelie-footer"><p><a href="http://github.com/chrisdone/hpaste">Web site source code on Github</a> / <a href="http://book.realworldhaskell.org/">Real World Haskell</a> / <a href="http://haskell.org/">Haskell.org</a> / <a href="http://planet.haskell.org/">Planet Haskell</a></p></div></div><script type="text/javascript"> var _gaq = _gaq || []; _gaq.push(['_setAccount', 'UA-7443395-10']); _gaq.push(['_trackPageview']); (function() {var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true; ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js'; var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);})(); </script></body></html>
