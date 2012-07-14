@@ -181,10 +181,10 @@ let to_string mine =
         else ' '
       else if x = mine.length then '\n'
       else square_to_char (get mine (x,y)))
-  ^ Printf.sprintf
-    "\nWater %d\nWaterproof %d\n"
-    mine.metadata.water
-    mine.metadata.waterproof_current
+  (* ^ Printf.sprintf *)
+  (*   "\nWater %d\nWaterproof %d\n" *)
+  (*   mine.metadata.water *)
+  (*   mine.metadata.waterproof_current *)
 
 let to_color_string mine =
   let s = to_string mine in

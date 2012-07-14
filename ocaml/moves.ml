@@ -76,7 +76,6 @@ let apply mine move =
 let follow mine moves =
   List.fold_left
     (fun mine move ->
-      let mine = apply mine move in
       Update.update (apply mine move))
     mine
     moves

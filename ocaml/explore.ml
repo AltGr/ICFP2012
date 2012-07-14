@@ -22,6 +22,36 @@ let rev_concat_map fct =
     | e::l -> aux (List.rev_append (fct e) accu) l
   in aux []
 
+let rec reachmap mine =
+  let paths = Array.make (Array.length mine.grid) ([],min_int) in
+  let len = mine.length in
+  let rec aux mine path =
+    let (x,y) = mine.robot in
+    match paths.(y*len+x) with
+    | ([],prev_score) when prev_score < mine.score ->
+      paths.(y*len+x) <- (path, mine.score);
+      let attempt move =
+        if Moves.is_valid mine move then
+          aux (Moves.apply mine move) (move::path)
+      in
+      List.iter attempt all_moves
+    | _ -> ()
+  in
+  aux mine [];
+  let paths =
+    Array.fold_left
+      (fun acc ((_,score) as p) -> if score > min_int then p::acc else acc)
+      []
+      paths
+  in
+  let paths = List.sort (fun (p1,score1) (p2,score2) -> score2 - score1) paths in
+  List.iter
+    (fun (path,_) ->
+      let mine = Moves.follow mine (List.rev path) in
+      reachmap mine)
+    paths
+
+
 let reachable mine =
   let color = Array.make (Array.length mine.grid) false in
   let len = mine.length in
@@ -125,12 +155,13 @@ let _ =
   prerr_endline "Loaded.";
   let winwinwin, score =
     try
-      for depthmax = 1 to 300 do
-        Printf.eprintf "[2KTrying at depth: %d\r" depthmax;
-        flush stderr;
-        Hashtbl.clear last_time_i_was_there;
-        full depthmax 0 [] init_mine
-      done;
+      reachmap init_mine;
+      (* for depthmax = 1 to 300 do *)
+      (*   Printf.eprintf "[2KTrying at depth: %d\r" depthmax; *)
+      (*   flush stderr; *)
+      (*   Hashtbl.clear last_time_i_was_there; *)
+      (*   full depthmax 0 [] init_mine *)
+      (* done; *)
       raise Not_found
     with FoundWin (w,score) -> w, score
   in
