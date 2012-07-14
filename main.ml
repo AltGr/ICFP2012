@@ -2,6 +2,7 @@
 (* let _ = Sys. *)
 
 open Grid.T
+open Moves.T
 
 let init_mine =
   if Array.length Sys.argv > 1 then
@@ -18,18 +19,18 @@ let rec loop mine =
   flush stdout;
   let move =
     try Scanf.scanf "%c\n" Moves.char_to_move with
-    | Invalid_argument _ -> Moves.Wait
-    | _ -> Moves.Abort
+    | Invalid_argument _ -> Wait
+    | _ -> Abort
   in
-  let move = if Moves.is_valid mine move then move else Moves.Wait in
+  let move = if Moves.is_valid mine move then move else Wait in
   let mine =
     try Moves.apply mine move
     with
-    | Moves.Won ->
+    | Won ->
       let score = mine.score + mine.collected * 50 in
       Printf.eprintf "Victory ! Score: %d\n" score;
       exit 0
-    | Moves.Aborted ->
+    | Aborted ->
       let score = mine.score + mine.collected * 25 in
       Printf.eprintf "Aborted ; Score: %d\n" score;
       exit 0

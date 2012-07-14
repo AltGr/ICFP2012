@@ -1,9 +1,13 @@
 open Grid.T
 
-type move = Left | Right | Up | Down | Wait | Abort
+module T = struct
+  type move = Left | Right | Up | Down | Wait | Abort
 
-exception Aborted
-exception Won
+  exception Aborted
+  exception Won
+end
+
+open T
 
 let char_to_move = function
   | 'L' -> Left
@@ -55,7 +59,7 @@ let apply mine move =
         { mine with
           nlambdas = pred mine.nlambdas;
           collected = succ mine.collected;
-          score = mine.score + 15;
+          score = mine.score + 25;
         }
       | Rock -> Grid.set mine (result dest move) Rock
       | Lift -> raise Won
