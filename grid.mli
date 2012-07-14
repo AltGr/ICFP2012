@@ -37,3 +37,5 @@ val foldi: (pos -> 'acc -> square -> 'acc) -> 'acc -> mine -> 'acc
 
 val to_string: mine -> string
 
+val to_color_string: mine -> string
+

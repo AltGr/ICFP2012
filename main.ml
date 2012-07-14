@@ -13,7 +13,7 @@ let init_mine =
     Grid.parse stdin
 
 let rec loop mine =
-  print_string (Grid.to_string mine);
+  print_string (Grid.to_color_string mine);
   Printf.printf "(Score:%d) Move> " mine.score;
   flush stdout;
   let move =

@@ -129,3 +129,21 @@ let to_string mine =
       let y = mine.height - i / (mine.length + 1) - 1 in
       if x = mine.length then '\n'
       else square_to_char (get mine (x,y)))
+
+let to_color_string mine =
+  let s = to_string mine in
+  let s' = String.make (String.length s * 10) ' ' in
+  for i=0 to String.length s - 1 do
+    let colorcode = match s.[i] with
+      | '#' -> 38
+      | '\\' -> 36
+      | '.' -> 33
+      | '*' -> 34
+      | 'R' -> 31
+      | 'L' -> 32
+      | _ -> 39
+    in
+    let ns = Printf.sprintf "[%dm%c[0m" colorcode s.[i] in
+    String.blit ns 0 s' (i*10) 10
+  done;
+  s'
