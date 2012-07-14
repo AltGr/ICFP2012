@@ -50,7 +50,7 @@ let is_valid mine move =
 
 let apply mine move =
   match move with
-  | Wait -> mine
+  | Wait -> { mine with moves = succ mine.moves }
   | Abort -> raise Aborted
   | Left | Right | Up | Down ->
     let dest = result mine.robot move in
@@ -67,4 +67,16 @@ let apply mine move =
     in
     let mine = Grid.set mine mine.robot Empty in
     let mine = Grid.set mine dest Robot in
-    { mine with robot = dest }
+    { mine with
+      robot = dest;
+      score = pred mine.score;
+      moves = succ mine.moves;
+    }
+
+let follow mine moves =
+  List.fold_left
+    (fun mine move ->
+      let mine = apply mine move in
+      Update.update (apply mine move))
+    mine
+    moves

@@ -36,7 +36,7 @@ let rec loop mine =
       exit 0
   in
   let mine =
-    try Update.update { mine with score = pred (mine.score) }
+    try Update.update mine
     with
     | Update.Dead ->
       Printf.eprintf "You're dead ! Score: %d\n" mine.score;

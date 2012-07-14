@@ -20,17 +20,33 @@ let update_square mine mine' (x,y) square =
     end
   | _ -> ()
 
-let isdead mine mine' =
+let isdead mine0 mine =
   let (x,y) = mine.robot in
   try
-    if Grid.get mine (x,y+1) = Empty && Grid.get mine' (x,y+1) = Rock then true
+    if mine.metadata.waterproof_current < 0 then true
+    else if Grid.get mine0 (x,y+1) = Empty && Grid.get mine (x,y+1) = Rock then true
     else false
   with Invalid_argument _ -> false
 
 exception Dead
 
-let update mine =
-  let mine' = Grid.copy mine in
-  Grid.iteri (update_square mine mine') mine;
-  if isdead mine mine' then raise Dead;
-  mine'
+let update mine0 =
+  let mine = Grid.copy mine0 in
+  Grid.iteri (update_square mine0 mine) mine0;
+  let (x,y) = mine.robot in
+  let metadata = mine.metadata in
+  let metadata = {
+    metadata with water =
+      if mine.moves mod metadata.flooding = 0
+      then succ metadata.water
+      else metadata.water
+  } in
+  let metadata = {
+    metadata with waterproof_current =
+      if y < metadata.water
+      then pred metadata.waterproof_current
+      else metadata.waterproof
+  } in
+  let mine = { mine with metadata } in
+  if isdead mine0 mine then raise Dead;
+  mine

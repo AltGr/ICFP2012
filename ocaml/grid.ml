@@ -172,16 +172,24 @@ let string_init len f =
   s
 
 let to_string mine =
-  string_init ((mine.length + 1) * mine.height)
+  string_init ((mine.length + 2) * mine.height)
     (fun i ->
-      let x = i mod (mine.length + 1) in
-      let y = mine.height - i / (mine.length + 1) - 1 in
-      if x = mine.length then '\n'
+      let x = i mod (mine.length + 2) - 1 in
+      let y = mine.height - i / (mine.length + 2) - 1 in
+      if x < 0 then
+        if y < mine.metadata.water then '~'
+        else ' '
+      else if x = mine.length then '\n'
       else square_to_char (get mine (x,y)))
+  ^ Printf.sprintf
+    "\nWater %d\nWaterproof %d\n"
+    mine.metadata.water
+    mine.metadata.waterproof_current
 
 let to_color_string mine =
   let s = to_string mine in
-  let s' = String.make (String.length s * 10) ' ' in
+  let charlen = 6 in
+  let s' = String.make (String.length s * charlen) ' ' in
   for i=0 to String.length s - 1 do
     let colorcode = match s.[i] with
       | '#' -> 38
@@ -190,9 +198,11 @@ let to_color_string mine =
       | '*' -> 34
       | 'R' -> 31
       | 'L' -> 32
+      | '~' -> 44
+      | '\n' -> 0
       | _ -> 39
     in
-    let ns = Printf.sprintf "[%dm%c[0m" colorcode s.[i] in
-    String.blit ns 0 s' (i*10) 10
+    let ns = Printf.sprintf "[%02dm%c" colorcode s.[i] in
+    String.blit ns 0 s' (i*charlen) charlen
   done;
   s'
