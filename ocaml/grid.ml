@@ -3,6 +3,13 @@ module T = struct
 
   type square = Robot | Wall | Rock | Lambda | Lift | Earth | Empty
 
+  type metadata = {
+    flooding: int;
+    water: int;
+    waterproof: int;
+    waterproof_current: int;
+  }
+
   type mine = {
     grid: square array;
     length: int;
@@ -11,7 +18,9 @@ module T = struct
     lift: pos;
     nlambdas: int;
     collected: int;
+    moves: int;
     score: int;
+    metadata: metadata;
   }
 end
 
@@ -53,9 +62,22 @@ let array_find_one f a =
   | (true, i) -> i
   | _ -> raise Not_found
 
+let string_slice cut str =
+  let rec aux pos =
+    try
+      let i = String.index_from str pos cut in
+      if i==pos then aux (succ pos)
+      else String.sub str pos (i - pos) :: aux (succ i)
+    with Not_found | Invalid_argument _ ->
+      let l = String.length str in
+      if l==pos then []
+      else [ String.sub str pos (l - pos) ]
+  in
+  aux 0
+
 let parse chan =
   let length_ref = ref 0 in
-  let rec aux acc =
+  let rec aux acc = (* parse the map *)
     let optline = try Some (input_line chan) with End_of_file -> None in
     match optline with
     | Some line when String.length line > 0 ->
@@ -88,7 +110,34 @@ let parse chan =
     Array.fold_left
       (fun acc -> function Lambda -> succ acc | _ -> acc) 0 grid
   in
-  { grid; length; height; robot; lift; nlambdas; collected = 0; score = 0 }
+  let rec parse_metadata meta =
+    try
+      let li = input_line chan in
+      let meta =
+        match string_slice ' ' li with
+        | ["Water"; n] -> { meta with water = int_of_string n }
+        | ["Flooding"; n] -> { meta with flooding = int_of_string n }
+        | ["Waterproof"; n] ->
+          let wp = int_of_string n in
+          { meta with waterproof = wp; waterproof_current = wp }
+        | _ -> prerr_endline ("Warning: unrecognised input \""^li^"\""); meta
+      in
+      parse_metadata meta
+    with End_of_file -> meta
+  in
+  let metadata =
+    parse_metadata {
+      flooding = 0;
+      water = 0;
+      waterproof = 10;
+      waterproof_current = 10;
+    }
+  in
+  {
+    grid; length; height; robot; lift; nlambdas;
+    collected = 0; score = 0; moves = 0;
+    metadata;
+  }
 
 let get mine (x,y) =
   if x < 0 || mine.length <= x || y < 0 || mine.height <= y

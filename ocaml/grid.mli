@@ -3,6 +3,13 @@ module T: sig
 
   type square = Robot | Wall | Rock | Lambda | Lift | Earth | Empty
 
+  type metadata = {
+    flooding: int;
+    water: int;
+    waterproof: int;
+    waterproof_current: int;
+  }
+
   type mine = {
     grid: square array;
     length: int;
@@ -11,7 +18,9 @@ module T: sig
     lift: pos;
     nlambdas: int;
     collected: int;
+    moves: int;
     score: int;
+    metadata: metadata;
   }
 end
 
