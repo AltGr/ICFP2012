@@ -26,6 +26,17 @@ let move_to_char = function
   | Wait -> 'W'
   | Abort -> 'A'
 
+let list_iteri f l =
+  ignore (
+    List.fold_left (fun acc x -> let () = f x acc in succ acc) 0 l
+  )
+
+let rev_path_to_string rpath =
+  let cs = List.rev_map move_to_char rpath in
+  let s = String.make (List.length cs) 'W' in
+  list_iteri (fun c i -> s.[i] <- c) cs;
+  s
+
 let result (x,y) = function
   | Left -> (x-1, y)
   | Right -> (x+1, y)
@@ -43,7 +54,7 @@ let is_valid mine move =
       | Empty | Earth | Lambda -> true
       | Wall -> false
       | Rock -> (move = Left || move = Right) && Grid.get mine (result dest move) = Empty
-      | Lift -> mine.nlambdas = 0
+      | Lift -> mine.collected = mine.nlambdas
       | Robot -> assert false
       end
     with Invalid_argument _ -> false
@@ -57,7 +68,6 @@ let apply mine move =
     let mine = match Grid.get mine dest with
       | Lambda ->
         { mine with
-          nlambdas = pred mine.nlambdas;
           collected = succ mine.collected;
           score = mine.score + 25;
         }

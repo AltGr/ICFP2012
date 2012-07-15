@@ -24,6 +24,7 @@ let isdead mine0 mine =
   let (x,y) = mine.robot in
   try
     if mine.metadata.waterproof_current < 0 then true
+    else if mine.moves >= mine.length * mine.height then true
     else if Grid.get mine0 (x,y+1) = Empty && Grid.get mine (x,y+1) = Rock then true
     else false
   with Invalid_argument _ -> false
