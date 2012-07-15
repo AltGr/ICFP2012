@@ -5,19 +5,40 @@ let update_square mine mine' (x,y) square =
   and set (x,y) square = mine'.grid.(y*mine.length+x) <- square
   in
   match square with
-  | Rock ->
+  | (Rock | Horock) as r ->
+    let fall ((x',y') as pos') =
+      set (x,y) Empty;
+      if r = Horock
+      && (try Grid.get mine (x',y'-1) <> Empty with Invalid_argument _ -> false)
+      then
+        set pos' Lambda
+      else
+        set pos' r
+    in
     begin match get (x,y-1) with
-    | Empty -> set (x,y) Empty; set (x,y-1) Rock
+    | Empty -> fall (x,y-1)
     | Rock ->
       if get (x+1,y) = Empty && get (x+1,y-1) = Empty then
-        (set (x,y) Empty; set (x+1,y-1) Rock)
+        fall (x+1,y-1)
       else if get (x-1,y) = Empty && get (x-1,y-1) = Empty then
-        (set (x,y) Empty; set (x-1,y-1) Rock)
+        fall (x-1,y-1)
     | Lambda ->
       if get (x+1,y) = Empty && get (x+1,y-1) = Empty then
-        (set (x,y) Empty; set (x+1,y-1) Rock)
+        fall (x+1,y-1)
     | _ -> ()
     end
+  | Beard when mine.moves mod mine.metadata.growth = 0 ->
+    let grow pos =
+      try
+        match Grid.get mine pos with
+        | Empty -> set pos Beard
+        | _ -> ()
+      with Invalid_argument _ -> ()
+    in
+    List.iter grow
+      [(x-1,y-1);(x,y-1);(x+1,y-1);
+       (x-1,y);(x+1,y);
+       (x-1,y+1);(x,y+1);(x+1,y+1)]
   | _ -> ()
 
 let isdead mine0 mine =
@@ -25,7 +46,8 @@ let isdead mine0 mine =
   try
     if mine.metadata.waterproof_current < 0 then true
     else if mine.moves >= mine.length * mine.height then true
-    else if Grid.get mine0 (x,y+1) = Empty && Grid.get mine (x,y+1) = Rock then true
+    else if Grid.get mine0 (x,y+1) = Empty then
+      match Grid.get mine (x,y+1) with Rock | Horock -> true | _ -> false
     else false
   with Invalid_argument _ -> false
 

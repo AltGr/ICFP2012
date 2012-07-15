@@ -1,7 +1,11 @@
 module T = struct
   type pos = int * int
 
-  type square = Robot | Wall | Rock | Lambda | Lift | Earth | Empty
+  type square =
+  | Robot | Wall | Rock | Lambda | Lift | Earth | Empty
+  | Trampoline of char | Target of char
+  | Beard | Razor
+  | Horock
 
   type metadata = {
     flooding: int;
@@ -10,6 +14,7 @@ module T = struct
     waterproof_current: int;
     growth: int;
     razors: int;
+    tramap: (pos * pos) list;
   }
 
   type mine = {
@@ -38,6 +43,11 @@ let char_to_square = function
   | 'L' -> Lift
   | '.' -> Earth
   | ' ' -> Empty
+  | c when 'A' <= c && c <= 'I' -> Trampoline c
+  | c when '1' <= c && c <= '9' -> Target c
+  | 'W' -> Beard
+  | '!' -> Razor
+  | '@' -> Horock
   | c -> failwith (Printf.sprintf "Unknown square character '%C'" c)
 
 let square_to_char = function
@@ -48,6 +58,10 @@ let square_to_char = function
   | Lift -> 'L'
   | Earth -> '.'
   | Empty -> ' '
+  | Trampoline c | Target c -> c
+  | Beard -> 'W'
+  | Razor -> '!'
+  | Horock -> '@'
 
 let check _ = assert false
 
@@ -110,7 +124,7 @@ let parse chan =
   in
   let nlambdas =
     Array.fold_left
-      (fun acc -> function Lambda -> succ acc | _ -> acc) 0 grid
+      (fun acc -> function Lambda | Horock -> succ acc | _ -> acc) 0 grid
   in
   let rec parse_metadata meta =
     try
@@ -122,7 +136,15 @@ let parse chan =
         | ["Waterproof"; n] ->
           let wp = int_of_string n in
           { meta with waterproof = wp; waterproof_current = wp }
-        | ["Trampoline";tr;"targets";tg] -> assert false
+        | ["Trampoline";tr;"targets";tg] ->
+          let tr_pos = array_find_one (fun t -> t = Trampoline tr.[0]) grid in
+          let tg_pos = array_find_one (fun t -> t = Target tg.[0]) grid in
+          { meta with
+            tramap =
+              ((tr_pos mod length, tr_pos / length),
+               (tg_pos mod length, tg_pos / length))
+              ::meta.tramap
+          }
         | ["Growth";n] -> { meta with growth = int_of_string n }
         | ["Razors";n] -> { meta with razors = int_of_string n }
         | _ -> prerr_endline ("Warning: unrecognised input \""^li^"\""); meta
@@ -138,6 +160,7 @@ let parse chan =
       waterproof_current = 10;
       growth = 25;
       razors = 0;
+      tramap = [];
     }
   in
   {

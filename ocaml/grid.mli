@@ -1,7 +1,11 @@
 module T: sig
   type pos = int * int
 
-  type square = Robot | Wall | Rock | Lambda | Lift | Earth | Empty
+  type square =
+  | Robot | Wall | Rock | Lambda | Lift | Earth | Empty
+  | Trampoline of char | Target of char
+  | Beard | Razor
+  | Horock
 
   type metadata = {
     flooding: int;
@@ -10,6 +14,7 @@ module T: sig
     waterproof_current: int;
     growth: int;
     razors: int;
+    tramap: (pos * pos) list;
   }
 
   type mine = {

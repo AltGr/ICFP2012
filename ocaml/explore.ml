@@ -33,18 +33,23 @@ let reachable mine =
       let waterproof =
         if y < mine.metadata.water then waterproof - 1 else mine.metadata.waterproof
       in
-      let follow () =
+      let follow x y =
         if x > 0 then aux (succ i) waterproof (x-1,y);
         if x < mine.length - 1 then aux (succ i) waterproof (x+1,y);
         if y > 0 then aux (succ i) waterproof (x,y-1);
         if y < mine.length - 1 then aux (succ i) waterproof (x,y+1)
       in
       match Grid.get mine pos with
-      | Wall -> ()
-      | Lambda | Earth | Robot | Empty ->
+      | Wall | Target _ | Beard -> ()
+      | Lambda | Earth | Robot | Empty | Razor ->
         color.(y*len+x) <- i;
-        follow ()
-      | Rock when (* Rock can move (approximatively) *)
+        follow x y
+      | Trampoline _ ->
+        color.(y*len+x) <- i;
+        let (targ_x,targ_y) = List.assoc (x,y) mine.metadata.tramap in
+        color.(targ_y*len+targ_x) <- i;
+        follow targ_x targ_y
+      | Rock | Horock when (* Rock can move (approximatively) *)
           (y > 0 (* Rock can fall *)
            && (color.((y-1)*len+x) >= 0
                || match Grid.get mine (x,y-1) with
@@ -66,8 +71,8 @@ let reachable mine =
                 && (color.(y*len+x+1) >= 0 || Grid.get mine (x+1,y) = Empty)))
           ->
         color.(y*len+x) <- i;
-        follow ()
-      | Rock -> ()
+        follow x y
+      | Rock | Horock -> ()
       | Lift -> color.(y*len+x) <- i
   in
   aux 0 mine.metadata.waterproof_current mine.robot;
@@ -147,7 +152,7 @@ let eval_situation mine =
   for i=0 to Array.length mine.grid - 1 do
     let c = color.(i) in
     match mine.grid.(i) with
-    | Lambda when c < 0 ->
+    | Lambda | Horock when c < 0 ->
       canwin := false;
       score := !score - 25
     | Lift when c < 0 ->
