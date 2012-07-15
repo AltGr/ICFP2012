@@ -28,14 +28,41 @@ let reachable mine =
   let len = mine.length in
   let rec aux ((x,y) as pos) =
     if not color.(y*len+x) then
+      let follow () =
+        if x > 0 then aux (x-1,y);
+        if x < mine.length - 1 then aux (x+1,y);
+        if y > 0 then aux (x,y-1);
+        if y < mine.length - 1 then aux (x,y+1)
+      in
       match Grid.get mine pos with
       | Wall -> ()
-      | Rock ->
-        color.(y*len+x) <- true;
-        (* if color.(y*len+x-1) &&  *)
       | Lambda | Earth | Robot | Empty ->
         color.(y*len+x) <- true;
-        aux (x-1,y); aux (x+1,y); aux (x,y-1); aux (x,y+1)
+        follow ()
+      | Rock when (* Rock can move (approximatively) *)
+          (y > 0 (* Rock can fall *)
+           && (color.((y-1)*len+x)
+               || match Grid.get mine (x,y-1) with
+                 | Empty -> true
+                 | Rock when
+                     (x > 0
+                      && (color.((y-1)*len+x-1) || Grid.get mine (x-1,y-1) = Empty))
+                     || (x < len-1
+                         && (color.((y-1)*len+x+1) || Grid.get mine (x+1,y-1) = Empty))
+                     -> true
+                 | Lambda when
+                     x < len-1
+                     && (color.((y-1)*len+x+1) || Grid.get mine (x+1,y-1) = Empty)
+                     -> true
+                 | _ -> false))
+          || (x>0 && x<len-1 (* Rock can be pushed *)
+              && (
+                (color.(y*len+x-1) || Grid.get mine (x-1,y) = Empty)
+                && (color.(y*len+x+1) || Grid.get mine (x+1,y) = Empty)))
+          ->
+        color.(y*len+x) <- true;
+        follow ()
+      | Rock -> ()
       | Lift -> color.(y*len+x) <- true
   in
   aux mine.robot;
