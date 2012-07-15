@@ -8,6 +8,8 @@ module T = struct
     water: int;
     waterproof: int;
     waterproof_current: int;
+    growth: int;
+    razors: int;
   }
 
   type mine = {
@@ -120,6 +122,9 @@ let parse chan =
         | ["Waterproof"; n] ->
           let wp = int_of_string n in
           { meta with waterproof = wp; waterproof_current = wp }
+        | ["Trampoline";tr;"targets";tg] -> assert false
+        | ["Growth";n] -> { meta with growth = int_of_string n }
+        | ["Razors";n] -> { meta with razors = int_of_string n }
         | _ -> prerr_endline ("Warning: unrecognised input \""^li^"\""); meta
       in
       parse_metadata meta
@@ -131,6 +136,8 @@ let parse chan =
       water = 0;
       waterproof = 10;
       waterproof_current = 10;
+      growth = 25;
+      razors = 0;
     }
   in
   {

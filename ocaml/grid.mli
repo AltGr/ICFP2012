@@ -8,6 +8,8 @@ module T: sig
     water: int;
     waterproof: int;
     waterproof_current: int;
+    growth: int;
+    razors: int;
   }
 
   type mine = {
