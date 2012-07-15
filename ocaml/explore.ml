@@ -143,13 +143,13 @@ let rec reachmap step walked_path mine =
     (Grid.to_color_string mine) (mine.height+2);
   flush stderr;
   (* assert (List.length walked_path = mine.moves); *)
-  let paths = Array.make (Array.length mine.grid) ([],min_int) in
+  let paths = Array.make (Array.length mine.grid) (mine,[]) in
   let len = mine.length in
   let rec aux mine path =
     let (x,y) = mine.robot in
     match paths.(y*len+x) with
-    | ([],prev_score) when prev_score < mine.score ->
-      paths.(y*len+x) <- (path, mine.score);
+    | (mine1, path1) when path1 = [] || mine1.score < mine.score ->
+      paths.(y*len+x) <- (mine, path);
       let attempt move =
         if Moves.is_valid mine move then
           try
@@ -160,7 +160,7 @@ let rec reachmap step walked_path mine =
           with
           | Won ->
             raise (FoundWin (move::path@walked_path,
-                             mine.score + mine.collected * 50 - 1))
+                             mine.collected * 75 - mine.moves - 1))
           | Update.Dead -> ()
       in
       List.iter attempt all_moves
@@ -177,21 +177,13 @@ let rec reachmap step walked_path mine =
   (* done; *)
   let paths =
     Array.fold_left
-      (fun acc ((_,score) as p) -> if score > mine.score then p::acc else acc)
+      (fun acc ((mine1,_) as p) -> if mine1.score > mine.score then p::acc else acc)
       []
       paths
   in
-  let paths = List.sort (fun (p1,score1) (p2,score2) -> score2 - score1) paths in
+  let paths = List.sort (fun (mine1,_) (mine2,_) -> mine2.score - mine1.score) paths in
   List.iter
-    (fun (path,score) ->
-      let mine =
-        List.fold_right
-          (fun move mine ->
-            let mine = Moves.apply mine move in
-            Update.update mine)
-          path mine
-      in
-      (* assert (mine.score = score); *)
+    (fun (mine,path) ->
       reachmap (succ step) (path@walked_path) mine)
     paths
 
@@ -230,5 +222,5 @@ let _ =
   let moves = List.rev_map Moves.move_to_char winwinwin in
   let s = String.make (List.length moves) 'W' in
   list_iteri (fun c i -> s.[i] <- c) moves;
-  Printf.eprintf "[31mFound win (%d):[0m %s\n" score s
+  Printf.eprintf "[31mFound win (%d in %d moves):[0m %s\n" score (String.length s) s
 
