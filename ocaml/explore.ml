@@ -1,7 +1,7 @@
 open Moves.T
 open Grid.T
 
-let all_moves = [Left; Up; Right; Down; Wait]
+let all_moves = [Left; Right; Up; Down; Wait]
 
 let possible_moves mine =
   List.filter (Moves.is_valid mine) all_moves
@@ -21,35 +21,6 @@ let rev_concat_map fct =
     | [] -> accu
     | e::l -> aux (List.rev_append (fct e) accu) l
   in aux []
-
-let rec reachmap mine =
-  let paths = Array.make (Array.length mine.grid) ([],min_int) in
-  let len = mine.length in
-  let rec aux mine path =
-    let (x,y) = mine.robot in
-    match paths.(y*len+x) with
-    | ([],prev_score) when prev_score < mine.score ->
-      paths.(y*len+x) <- (path, mine.score);
-      let attempt move =
-        if Moves.is_valid mine move then
-          aux (Moves.apply mine move) (move::path)
-      in
-      List.iter attempt all_moves
-    | _ -> ()
-  in
-  aux mine [];
-  let paths =
-    Array.fold_left
-      (fun acc ((_,score) as p) -> if score > min_int then p::acc else acc)
-      []
-      paths
-  in
-  let paths = List.sort (fun (p1,score1) (p2,score2) -> score2 - score1) paths in
-  List.iter
-    (fun (path,_) ->
-      let mine = Moves.follow mine (List.rev path) in
-      reachmap mine)
-    paths
 
 
 let reachable mine =
@@ -137,6 +108,70 @@ let rec breadth depth l =
   in
   breadth (succ depth) next_mines
 
+
+let rec reachmap step walked_path mine =
+  Printf.eprintf
+    "\r[2K[32mStep/Moves: %d/%d\nScore: %d[0m\n%s[%dA\r"
+    step mine.moves mine.score
+    (Grid.to_color_string mine) (mine.height+2);
+  flush stderr;
+  (* assert (List.length walked_path = mine.moves); *)
+  let paths = Array.make (Array.length mine.grid) ([],min_int) in
+  let len = mine.length in
+  let rec aux mine path =
+    let (x,y) = mine.robot in
+    match paths.(y*len+x) with
+    | ([],prev_score) when prev_score < mine.score ->
+      paths.(y*len+x) <- (path, mine.score);
+      let attempt move =
+        if Moves.is_valid mine move then
+          try
+            let mine = Moves.apply mine move in
+            let mine = Update.update mine in
+            if reach_ok mine then
+              aux mine (move::path)
+          with
+          | Won ->
+            raise (FoundWin (move::path@walked_path,
+                             mine.score + mine.collected * 50 - 1))
+          | Update.Dead -> ()
+      in
+      List.iter attempt all_moves
+    | _ -> ()
+  in
+  aux mine [];
+  (* for y = mine.height - 1 downto 0 do *)
+  (*   for x = 0 to mine.length -1 do *)
+  (*     let (p,s) = paths.(y*mine.length+x) in *)
+  (*     if s = min_int then Printf.printf " (------)" *)
+  (*     else Printf.printf " (%2d,%3d)" (List.length p + List.length walked_path) s *)
+  (*   done; *)
+  (*   print_newline (); *)
+  (* done; *)
+  let paths =
+    Array.fold_left
+      (fun acc ((_,score) as p) -> if score > mine.score then p::acc else acc)
+      []
+      paths
+  in
+  let paths = List.sort (fun (p1,score1) (p2,score2) -> score2 - score1) paths in
+  List.iter
+    (fun (path,score) ->
+      let mine =
+        List.fold_right
+          (fun move mine ->
+            let mine = Moves.apply mine move in
+            Update.update mine)
+          path mine
+      in
+      (* assert (mine.score = score); *)
+      reachmap (succ step) (path@walked_path) mine)
+    paths
+
+
+
+(* ------------------- *)
+
 let init_mine =
   if Array.length Sys.argv > 1 then
     let f = open_in Sys.argv.(1) in
@@ -155,7 +190,7 @@ let _ =
   prerr_endline "Loaded.";
   let winwinwin, score =
     try
-      reachmap init_mine;
+      reachmap 1 [] init_mine;
       (* for depthmax = 1 to 300 do *)
       (*   Printf.eprintf "[2KTrying at depth: %d\r" depthmax; *)
       (*   flush stderr; *)
