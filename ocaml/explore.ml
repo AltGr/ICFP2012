@@ -1,7 +1,7 @@
 open Moves.T
 open Grid.T
 
-let all_moves = [Left; Right; Up; Down; Wait]
+let all_moves = [Left; Right; Up; Down](* ; Wait] *)
 
 let possible_moves mine =
   List.filter (Moves.is_valid mine) all_moves
@@ -145,18 +145,17 @@ let eval_situation mine =
   let color = reachable mine in
   let canwin = ref true in
   for i=0 to Array.length mine.grid - 1 do
+    let c = color.(i) in
     match mine.grid.(i) with
-    | Lambda | Lift when color.(i) >= 0 ->
-      score := !score + 25 - color.(i)
-    | Lambda ->
+    | Lambda when c < 0 ->
       canwin := false;
       score := !score - 25
-    | Lift ->
+    | Lift when c < 0 ->
       canwin := false
     | _ -> ()
   done;
   if !canwin then score := !score + 50 * mine.nlambdas
-  else score := !score + 25 * mine.nlambdas;
+  else score := !score - 1000 * mine.nlambdas;
   !score
 
 let rec lookup_path best_so_far step walked_path mine0 =
@@ -173,20 +172,20 @@ let rec lookup_path best_so_far step walked_path mine0 =
       mine0.score + 25 * mine0.collected, mine0, walked_path;
 
   (* assert (List.length walked_path = mine.moves); *)
-  let rec reachmap walked_path mine =
-    let paths = Array.make (Array.length mine.grid) (mine,[]) in
+  let rec reachmap walked_path mine eval =
+    let paths = Array.make (Array.length mine.grid) (mine,[],min_int) in
     let len = mine.length in
-    let rec aux mine path =
+    let rec aux mine path eval =
       let (x,y) = mine.robot in
       match paths.(y*len+x) with
-      | (mine1, path1) when path1 = [] || mine1.score < mine.score ->
-        paths.(y*len+x) <- (mine, path);
+      | (mine1, path1, eval1) when path1 = [] || eval1 < eval ->
+        paths.(y*len+x) <- (mine, path, eval);
         let attempt move =
           if Moves.is_valid mine move then
             try
               let mine = Moves.apply mine move in
               let mine = Update.update mine in
-              aux mine (move::path)
+              aux mine (move::path) (eval_situation mine)
             with
             | Won ->
               let end_score = mine.collected * 75 - mine.moves - 1 in
@@ -201,14 +200,14 @@ let rec lookup_path best_so_far step walked_path mine0 =
         List.iter attempt all_moves
       | _ -> ()
     in
-    aux mine [];
+    aux mine [] eval;
     paths
   in
-  let paths = reachmap walked_path mine0 in
   let eval0 = eval_situation mine0 in
+  let paths = reachmap walked_path mine0 eval0 in
   let paths =
     Array.fold_left
-      (fun paths (mine,path) ->
+      (fun paths (mine,path,eval) ->
         match path with
         | [] -> paths
         | p ->
@@ -220,7 +219,6 @@ let rec lookup_path best_so_far step walked_path mine0 =
           (*     mine.score *)
           (*     reach *)
           (* in *)
-          let eval = eval_situation mine in
           if eval > eval0 then (eval, mine, p)::paths
           else paths)
       []
