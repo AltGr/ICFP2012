@@ -157,28 +157,40 @@ let rec breadth depth l =
   breadth (succ depth) next_mines
 
 let eval_situation mine =
-  let score = ref mine.score in
+  let score = ref (mine.collected * 50) in
   let color = reachable mine in
   let canwin = ref true in
+  let (minx,miny,maxx,maxy) = (ref mine.length, ref mine.height, ref 0, ref 0) in
   for i=0 to Array.length mine.grid - 1 do
     let c = color.(i) in
     match mine.grid.(i) with
-    | Lambda | Horock when c < 0 ->
+    | (Lambda | Horock) when c < 0 ->
       canwin := false;
-      score := !score - 25
+      score := !score - 50
     | Lift when c < 0 ->
       canwin := false
+    | (Lambda | Lift | Horock) as sq ->
+      let (x,y) = i mod mine.length, i / mine.length in
+      if x < !minx then minx := x else if x > !maxx then maxx := x;
+      if y < !miny then miny := y else if y > !maxy then maxy := y;
+      if sq = Horock then score := !score - 75
     | _ -> ()
   done;
-  if !canwin then score := !score + 50 * mine.nlambdas
-  else score := !score - 1000 * mine.nlambdas;
+  (* let disp = (!maxx - !minx) + (!maxy - !miny) in *)
+  (* score := !score - disp * disp; *)
+  if !canwin then score := !score + 25 * mine.nlambdas
+  else score := !score - 25 * mine.nlambdas;
+  score := !score + mine.metadata.waterproof_current * 2;
+  score := !score + mine.metadata.razors * 2;
   !score
 
-let rec lookup_path best_so_far step walked_path mine0 =
+let rec lookup_path best_so_far toptake eval_cut step walked_path mine0 =
+
+  let eval0 = eval_situation mine0 in
 
   Printf.eprintf
-    "\r[2K[32mStep/Moves: %d/%d\nScore: %d[0m\n%s\n%s[%dA\r"
-    step mine0.moves mine0.score
+    "\r[2K[32mStep: %d Moves: %d/%d\nScore: %d [32mEval: %d[0m\n%s\n%s[%dA\r"
+    step mine0.moves (mine0.length * mine0.height) mine0.score eval0
     (let s = (Moves.rev_path_to_string walked_path) in if String.length s > 80 then "..."^String.sub s (String.length s - 77) 77 else s)
     (Grid.to_color_string mine0) (mine0.height+3);
   flush stderr;
@@ -188,13 +200,13 @@ let rec lookup_path best_so_far step walked_path mine0 =
       mine0.score + 25 * mine0.collected, mine0, walked_path;
 
   (* assert (List.length walked_path = mine.moves); *)
-  let rec reachmap walked_path mine eval =
+  let reachmap walked_path mine eval =
     let paths = Array.make (Array.length mine.grid) (mine,[],min_int) in
     let len = mine.length in
     let rec aux mine path eval =
       let (x,y) = mine.robot in
       match paths.(y*len+x) with
-      | (mine1, path1, eval1) when path1 = [] || eval1 < eval ->
+      | (mine1, path1, eval1) when eval1 < eval ->
         paths.(y*len+x) <- (mine, path, eval);
         let attempt move =
           if Moves.is_valid mine move then
@@ -219,14 +231,13 @@ let rec lookup_path best_so_far step walked_path mine0 =
     aux mine [] eval;
     paths
   in
-  let eval0 = eval_situation mine0 in
   let paths = reachmap walked_path mine0 eval0 in
   let paths =
     Array.fold_left
       (fun paths (mine,path,eval) ->
         match path with
         | [] -> paths
-        | p ->
+        | path ->
           (* let reach = reachmap walked_path mine in *)
           (* let eval = *)
           (*   Array.fold_left (\* extract max score *\) *)
@@ -235,19 +246,26 @@ let rec lookup_path best_so_far step walked_path mine0 =
           (*     mine.score *)
           (*     reach *)
           (* in *)
-          if eval > eval0 then (eval, mine, p)::paths
+          if eval >= eval0 then (mine, path, eval)::paths
           else paths)
       []
     paths
   in
   let paths =
-    List.sort (fun (eval1,_,_) (eval2,_,_) -> eval2 - eval1) paths
+    List.sort (fun (_,_,eval1) (_,_,eval2) -> eval2 - eval1) paths
   in
-  List.iter
-    (fun (_eval,mine,path) ->
-      lookup_path
-        best_so_far (succ step) (path@walked_path) mine)
-    paths
+  (* List.iter (fun (_,_,a) -> Printf.eprintf " %3d" a) paths; *)
+  (* prerr_newline(); *)
+  let rec descend ntake paths =
+    if ntake >= 0 then
+      match paths with
+      | (mine,path,_eval)::r ->
+        lookup_path
+          best_so_far toptake eval_cut (succ step) (path@walked_path) mine;
+        descend (pred ntake) r
+      | [] -> ()
+  in
+  descend toptake paths
 
 
 
@@ -268,7 +286,14 @@ let _ =
     let best_so_far = ref (0, init_mine, []) in
     Sys.catch_break true;
     try
-      lookup_path best_so_far 1 [] init_mine;
+      let rec retry toptake eval_cut =
+        if toptake > 0 then (
+          lookup_path best_so_far toptake eval_cut 1 [] init_mine;
+          prerr_endline "\r[J[31mBroadening search[m";
+          retry (toptake * 2) (eval_cut - 20)
+        )
+      in
+      retry 10 80;
       (* for depthmax = 1 to 300 do *)
       (*   Printf.eprintf "[2KTrying at depth: %d\r" depthmax; *)
       (*   flush stderr; *)
