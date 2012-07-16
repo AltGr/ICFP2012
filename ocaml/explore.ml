@@ -1,27 +1,11 @@
 open Moves.T
 open Grid.T
 
-let all_moves = [Left; Right; Up; Down; Shave](* ; Wait] *)
-
-let possible_moves mine =
-  List.filter (Moves.is_valid mine) all_moves
-
-let rec list_filter_map f = function
-  | [] -> []
-  | x::r -> match f x with
-    | Some y -> y :: list_filter_map f r
-    | None -> list_filter_map f r
+let all_moves = [Up; Left; Right; Down; Shave](* ; Wait] *)
 
 exception FoundWin of move list * int
 
 let last_time_i_was_there = (Hashtbl.create 87 : (pos, mine) Hashtbl.t)
-
-let rev_concat_map fct =
-  let rec aux accu = function
-    | [] -> accu
-    | e::l -> aux (List.rev_append (fct e) accu) l
-  in aux []
-
 
 let reachable mine =
   let color = Array.make (Array.length mine.grid) (-1) in
@@ -89,73 +73,6 @@ let reachable mine =
   aux 0 mine.metadata.razors mine.metadata.waterproof_current mine.robot;
   color
 
-let reach_ok mine =
-  let color = reachable mine in
-  try
-    for i=0 to Array.length mine.grid - 1 do
-      match mine.grid.(i) with
-      | Lambda | Lift -> if color.(i) < 0 then raise Exit
-      | _ -> ()
-    done;
-    true
-  with
-    Exit -> false
-
-let nexts mine path =
-  list_filter_map
-    (fun move ->
-      try
-        let mine' = Moves.apply mine move in
-        let mine' = Update.update { mine' with score = pred mine'.score } in
-        (* Some (move::path,mine') *)
-        let res =
-          if
-            (try (Hashtbl.find last_time_i_was_there mine'.robot).grid = mine'.grid
-             with Not_found -> false)
-          then None
-          else Some (move::path,mine')
-        in
-        Hashtbl.replace last_time_i_was_there mine'.robot mine';
-        res
-      with
-      | Won -> raise (FoundWin (move::path, mine.score + mine.collected * 50 - 1))
-      | Update.Dead -> None)
-    (possible_moves mine)
-
-let rec full depthmax depth acc mine =
-  if depth > depthmax then ()
-  else begin
-    Printf.eprintf "\r[2KDepth: %d/%d\n%s[%dA\r" depth depthmax (Grid.to_color_string mine) (mine.height+1);
-    (* Printf.eprintf "[2KDepth: %2d/%2d -- Collected/Score: %d/%d\n" depth depthmax mine.collected mine.score; *)
-    (* flush stderr; *)
-    let next = nexts mine acc in
-    let next =
-      rev_concat_map (fun (path,mine) -> nexts mine path) next
-    in
-    let next =
-      rev_concat_map (fun (path,mine) -> nexts mine path) next
-    in
-    let next =
-      rev_concat_map (fun (path,mine) -> nexts mine path) next
-    in
-    let next =
-      List.filter (fun (path,mine) -> reach_ok mine) next
-    in
-    (* greedy ! *)
-    let next = List.sort (fun (_,mine1) (_,mine2) -> mine2.score - mine1.score) next in
-    List.iter (fun (path, mine) -> full depthmax (succ depth) path mine) next
-  end
-
-let rec breadth depth l =
-  Printf.eprintf "[2KDepth: %d\r" depth;
-  flush stderr;
-  let next_mines =
-    rev_concat_map
-      (fun (path,mine) -> nexts mine path)
-      l
-  in
-  breadth (succ depth) next_mines
-
 let eval_situation mine =
   let score = ref (mine.collected * 50) in
   let color = reachable mine in
@@ -199,7 +116,6 @@ let rec lookup_path best_so_far toptake eval_cut step walked_path mine0 =
     best_so_far :=
       mine0.score + 25 * mine0.collected, mine0, walked_path;
 
-  (* assert (List.length walked_path = mine.moves); *)
   let reachmap walked_path mine eval =
     let paths = Array.make (Array.length mine.grid) (mine,[],min_int) in
     let len = mine.length in
@@ -238,15 +154,7 @@ let rec lookup_path best_so_far toptake eval_cut step walked_path mine0 =
         match path with
         | [] -> paths
         | path ->
-          (* let reach = reachmap walked_path mine in *)
-          (* let eval = *)
-          (*   Array.fold_left (\* extract max score *\) *)
-          (*     (fun score (mine1,_) -> *)
-          (*       if mine1.score > score then mine1.score else score) *)
-          (*     mine.score *)
-          (*     reach *)
-          (* in *)
-          if eval >= eval0 then (mine, path, eval)::paths
+          if crit eval0 eval then (mine, path, eval)::paths
           else paths)
       []
     paths
@@ -254,18 +162,11 @@ let rec lookup_path best_so_far toptake eval_cut step walked_path mine0 =
   let paths =
     List.sort (fun (_,_,eval1) (_,_,eval2) -> eval2 - eval1) paths
   in
-  (* List.iter (fun (_,_,a) -> Printf.eprintf " %3d" a) paths; *)
-  (* prerr_newline(); *)
-  let rec descend ntake paths =
-    if ntake >= 0 then
-      match paths with
-      | (mine,path,_eval)::r ->
-        lookup_path
-          best_so_far toptake eval_cut (succ step) (path@walked_path) mine;
-        descend (pred ntake) r
-      | [] -> ()
-  in
-  descend toptake paths
+  List.iter
+    (fun (mine,path,_eval) ->
+      lookup_path
+        best_so_far crit (succ step) (path@walked_path) mine)
+    paths
 
 
 
@@ -286,20 +187,9 @@ let _ =
     let best_so_far = ref (0, init_mine, []) in
     Sys.catch_break true;
     try
-      let rec retry toptake eval_cut =
-        if toptake > 0 then (
-          lookup_path best_so_far toptake eval_cut 1 [] init_mine;
-          prerr_endline "\r[J[31mBroadening search[m";
-          retry (toptake * 2) (eval_cut - 20)
-        )
-      in
-      retry 10 80;
-      (* for depthmax = 1 to 300 do *)
-      (*   Printf.eprintf "[2KTrying at depth: %d\r" depthmax; *)
-      (*   flush stderr; *)
-      (*   Hashtbl.clear last_time_i_was_there; *)
-      (*   full depthmax 0 [] init_mine *)
-      (* done; *)
+      lookup_path best_so_far (fun eval1 eval2 -> eval2 > eval1) 1 [] init_mine;
+      prerr_endline "\r[J[31mBroadening search[m";
+      lookup_path best_so_far (fun eval1 eval2 -> true) 1 [] init_mine;
       !best_so_far
     with
     | Sys.Break -> !best_so_far

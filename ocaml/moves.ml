@@ -126,10 +126,3 @@ let apply mine move =
       score = pred mine.score;
       moves = succ mine.moves;
     }
-
-let follow mine moves =
-  List.fold_left
-    (fun mine move ->
-      Update.update (apply mine move))
-    mine
-    moves

@@ -63,8 +63,6 @@ let square_to_char = function
   | Razor -> '!'
   | Horock -> '@'
 
-let check _ = assert false
-
 let array_find_one f a =
   match
     Array.fold_left
@@ -182,19 +180,6 @@ let set mine (x,y) square =
   mine'
 
 let iteri f mine = Array.iteri (fun i -> f (i mod mine.length, i / mine.length)) mine.grid
-
-let mapi f mine = assert false (* Array.mapi f mine.grid *)
-
-let fold f acc mine = Array.fold_left f acc mine.grid
-
-let foldi f acc mine =
-  let (i,acc) =
-    Array.fold_left
-      (fun (i,acc) x ->
-        let pos = i mod mine.length, i / mine.length in
-        succ i, f pos acc x)
-      (0,acc) mine.grid
-  in acc
 
 let string_init len f =
   let s = String.make len ' ' in
