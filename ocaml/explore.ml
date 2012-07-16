@@ -93,24 +93,33 @@ let eval_situation mine =
       if sq = Horock then score := !score - 75
     | _ -> ()
   done;
-  (* let disp = (!maxx - !minx) + (!maxy - !miny) in *)
-  (* score := !score - disp * disp; *)
-  if !canwin then score := !score + 25 * mine.nlambdas
-  else score := !score - 25 * mine.nlambdas;
+  let disp = (!maxx - !minx) + (!maxy - !miny) in
+  score := !score - disp;
+  if !canwin then score := !score + 50 * mine.nlambdas
+  else score := !score - 100 * mine.nlambdas;
   score := !score + mine.metadata.waterproof_current * 2;
   score := !score + mine.metadata.razors * 2;
   !score
 
-let rec lookup_path best_so_far toptake eval_cut step walked_path mine0 =
+let debug =
+  try
+    match Sys.getenv "ICFP_DEBUG" with
+    | "" | "0" -> false
+    | _ -> true
+  with Not_found -> false
+
+let rec lookup_path best_so_far crit step walked_path mine0 =
 
   let eval0 = eval_situation mine0 in
 
-  Printf.eprintf
-    "\r[2K[32mStep: %d Moves: %d/%d\nScore: %d [32mEval: %d[0m\n%s\n%s[%dA\r"
-    step mine0.moves (mine0.length * mine0.height) mine0.score eval0
-    (let s = (Moves.rev_path_to_string walked_path) in if String.length s > 80 then "..."^String.sub s (String.length s - 77) 77 else s)
-    (Grid.to_color_string mine0) (mine0.height+3);
-  flush stderr;
+  if debug then begin
+    Printf.eprintf
+      "\r[2K[32mStep: %d Moves: %d/%d\nScore: %d [32mEval: %d[0m\n%s\n%s[%dA\r"
+      step mine0.moves (mine0.length * mine0.height) mine0.score eval0
+      (let s = (Moves.rev_path_to_string walked_path) in if String.length s > 80 then "..."^String.sub s (String.length s - 77) 77 else s)
+      (Grid.to_color_string mine0) (mine0.height+3);
+    flush stderr
+  end;
 
   if let (best,_,_) = !best_so_far in mine0.score > best then
     best_so_far :=
@@ -195,7 +204,7 @@ let _ =
     | Sys.Break -> !best_so_far
   in
   Printf.eprintf
-    "\r[J[31mBest solution found: (%d in %d/%d moves):[0m %s\n"
-    score (List.length path) (init_mine.length * init_mine.height)
-    (Moves.rev_path_to_string path);
+    "\r[J[31mBest solution found: %d in %d/%d moves:[0m\n"
+    score (List.length path) (init_mine.length * init_mine.height);
+  flush stderr;
   print_endline (Moves.rev_path_to_string path)

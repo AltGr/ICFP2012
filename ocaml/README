@@ -12,6 +12,8 @@ Running:
  (just use ./install --rebuild for that).
  This entry uses exclusively ocaml (well, except for the install script).
 
+ Set environment variable ICFP_DEBUG to true to get a nice display of what's
+ going on on stderr !
 
 Files:
  ./lifter         Let this robot do some mining
@@ -34,9 +36,9 @@ Usage:
  Explore and simu can read a map file given the name in their arguments, or a map
  directly from stdin.
 
- Explore outputs some stats and the current map it's looking from on stderr, and
- the best solution found so far on stdout when quitting (possibly because of
- SIGINT)
+ Explore outputs some stats and the current map it's looking from on stderr if
+ ICFP_DEBUG is set, and the best solution found so far on stdout when quitting
+ (possibly because of SIGINT)
 
 
 Algorithm:
