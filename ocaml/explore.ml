@@ -1,7 +1,7 @@
 open Moves.T
 open Grid.T
 
-let all_moves = [Up; Left; Right; Down; Shave](* ; Wait] *)
+let all_moves = [Left; Right; Up; Down; Shave](* ; Wait] *)
 
 exception FoundWin of move list * int
 
@@ -65,7 +65,7 @@ let reachable mine =
                 (color.(y*len+x-1) >= 0 || Grid.get mine (x-1,y) = Empty)
                 && (color.(y*len+x+1) >= 0 || Grid.get mine (x+1,y) = Empty)))
           ->
-        color.(y*len+x) <- i;
+        color.(y*len+x) <- i+1;
         follow x y
       | Rock | Horock -> ()
       | Lift -> color.(y*len+x) <- i
@@ -74,7 +74,7 @@ let reachable mine =
   color
 
 let eval_situation mine =
-  let score = ref (mine.collected * 50) in
+  let score = ref mine.score in
   let color = reachable mine in
   let canwin = ref true in
   let (minx,miny,maxx,maxy) = (ref mine.length, ref mine.height, ref 0, ref 0) in
@@ -108,7 +108,7 @@ let debug =
     | _ -> true
   with Not_found -> false
 
-let rec lookup_path best_so_far crit step walked_path mine0 =
+let rec lookup_path best_so_far allow_worse step walked_path mine0 =
 
   let eval0 = eval_situation mine0 in
 
@@ -156,17 +156,16 @@ let rec lookup_path best_so_far crit step walked_path mine0 =
     aux mine [] eval;
     paths
   in
-  let paths = reachmap walked_path mine0 eval0 in
+  let paths_array = reachmap walked_path mine0 eval0 in
   let paths =
     Array.fold_left
       (fun paths (mine,path,eval) ->
         match path with
         | [] -> paths
-        | path ->
-          if crit eval0 eval then (mine, path, eval)::paths
-          else paths)
+        | path when eval >= eval0 -> (mine, path, eval)::paths
+        | _ -> paths)
       []
-    paths
+    paths_array
   in
   let paths =
     List.sort (fun (_,_,eval1) (_,_,eval2) -> eval2 - eval1) paths
@@ -174,9 +173,27 @@ let rec lookup_path best_so_far crit step walked_path mine0 =
   List.iter
     (fun (mine,path,_eval) ->
       lookup_path
-        best_so_far crit (succ step) (path@walked_path) mine)
-    paths
-
+        best_so_far allow_worse (succ step) (path@walked_path) mine)
+    paths;
+  if allow_worse > 0 then
+    let paths =
+      Array.fold_left
+        (fun paths (mine,path,eval) ->
+          match path with
+          | [] -> paths
+          | path when eval < eval0 -> (mine, path, eval)::paths
+          | _ -> paths)
+        []
+        paths_array
+    in
+    let paths =
+      List.sort (fun (_,_,eval1) (_,_,eval2) -> eval2 - eval1) paths
+    in
+    List.iter
+      (fun (mine,path,_eval) ->
+        lookup_path
+          best_so_far (pred allow_worse) (succ step) (path@walked_path) mine)
+      paths
 
 
 (* ------------------- *)
@@ -196,9 +213,13 @@ let _ =
     let best_so_far = ref (0, init_mine, []) in
     Sys.catch_break true;
     try
-      lookup_path best_so_far (fun eval1 eval2 -> eval2 > eval1) 1 [] init_mine;
-      prerr_endline "\r[J[31mBroadening search[m";
-      lookup_path best_so_far (fun eval1 eval2 -> true) 1 [] init_mine;
+      let rec attempt allow_worse =
+        lookup_path best_so_far allow_worse 1 [] init_mine;
+        if allow_worse <= 12 then
+          (prerr_endline "\r[J[31mBroadening search[m";
+           attempt (succ allow_worse))
+      in
+      attempt 0;
       !best_so_far
     with
     | Sys.Break -> !best_so_far
