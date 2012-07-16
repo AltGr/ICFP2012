@@ -102,7 +102,7 @@ let apply mine move =
         { mine with metadata =
             { mine.metadata with razors = succ mine.metadata.razors }
         }, dest
-      | Rock | Horock -> Grid.set mine (result dest move) Rock, dest
+      | (Rock | Horock) as r -> Grid.set mine (result dest move) r, dest
       | Lift -> raise Won
       | Trampoline _ ->
         let newdest = List.assoc dest mine.metadata.tramap in
