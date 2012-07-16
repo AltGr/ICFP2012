@@ -1,0 +1,55 @@
+~~ An humble lambda lifter ~~
+
+Submission to the ICFP Contest 2012.
+
+
+Author:
+ Louis Gesbert <l@gesbert.fr>
+
+
+Running:
+ Doesn't need any additional packages to run. Needs ocaml-nox for compiling
+ (just use ./install --rebuild for that).
+ This entry uses exclusively ocaml (well, except for the install script).
+
+
+Files:
+ ./lifter         Let this robot do some mining
+ ./README         This file
+ ./PACKAGES       Empty file, we don't need anything extra
+ ./install        Does nothing, unless ./lifter is absent or --rebuild is
+                  specified
+ ./src/grid.ml*   Defines the structure and helper functions for navigating the
+                  mine
+ ./src/moves.ml   Handles the movements in the mine, and winning conditions
+ ./src/update.ml  Handles the update phase of the mine, and losing conditions
+ ./src/main.ml    A mining simulator that commands from the command-line
+                  (compile&run with ocamlbuild src/main.native -- <map>)
+ ./src/explore.ml The engine to find good mining routes
+                  (compile&run with ocamlbuild src/explore.native -- <map>)
+
+
+Usage:
+
+ Explore and main can read a map file given the name in their arguments, or a map
+ directly from stdin.
+
+ Explore outputs some stats and the current map it's looking from on stderr, and
+ the best solution found so far on stdout when quitting (possibly because of
+ SIGINT)
+
+
+Algorithm:
+ Each step, we fill the reachable part of the map with paths that can be used to
+ get there by recursively trying all possible moves. When two paths lead to the
+ same square, we choose the one that seems to leave the mine in the best state,
+ according to some heuristic (which means every square may be checked more than once).
+
+ From there, we order the paths by decreasing order of expected interest, and
+ try again, possibly backtracking when no moves looks interesting anymore.
+
+ The heuristics includes a function that detects if all lambdas and the lift are
+ still accessible, so that we can rule out moves that would lock us.
+
+Thanks:
+ Thanks for reading ! And for this awesome contest, all organisers :)

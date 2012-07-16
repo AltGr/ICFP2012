@@ -1,0 +1,41 @@
+#!/bin/sh -ue
+
+help() {
+    cat <<EOF
+Gets ready for lifting. Options:
+	--rebuild	Rebuilds the lifter
+EOF
+}
+
+REBUILD=0
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --rebuild)
+            REBUILD=1
+            ;;
+        --help)
+            help
+            exit 0
+            ;;
+        *)
+            echo "Unknown option \"$1\""
+            help
+            exit 1
+    esac
+    shift
+done
+
+if [ $REBUILD -ne 0 ] || [ ! -x "lifter" ]; then
+    if [ ! -x /usr/bin/ocamlbuild ]; then
+        echo "Let's install the ocaml compiler first"
+        sudo apt-get -y install ocaml-nox
+        echo "All set"
+    fi
+    echo "Rebuilding lifter"
+    ocamlbuild src/explore.native
+    cp _build/src/explore.native lifter
+    echo "Done"
+else
+    echo "Nothing to do; ready to go"
+fi
