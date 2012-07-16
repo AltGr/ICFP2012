@@ -23,15 +23,15 @@ Files:
                   mine
  ./src/moves.ml   Handles the movements in the mine, and winning conditions
  ./src/update.ml  Handles the update phase of the mine, and losing conditions
- ./src/main.ml    A mining simulator that commands from the command-line
-                  (compile&run with ocamlbuild src/main.native -- <map>)
+ ./src/simu.ml    A mining simulator that commands from the command-line
+                  (compile&run with ocamlbuild src/simu.native -- <map>)
  ./src/explore.ml The engine to find good mining routes
                   (compile&run with ocamlbuild src/explore.native -- <map>)
 
 
 Usage:
 
- Explore and main can read a map file given the name in their arguments, or a map
+ Explore and simu can read a map file given the name in their arguments, or a map
  directly from stdin.
 
  Explore outputs some stats and the current map it's looking from on stderr, and
