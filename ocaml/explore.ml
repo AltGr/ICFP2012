@@ -1,7 +1,7 @@
 open Moves.T
 open Grid.T
 
-let all_moves = [Left; Right; Up; Down](* ; Wait] *)
+let all_moves = [Left; Right; Up; Down; Shave](* ; Wait] *)
 
 let possible_moves mine =
   List.filter (Moves.is_valid mine) all_moves
@@ -27,20 +27,31 @@ let reachable mine =
   let color = Array.make (Array.length mine.grid) (-1) in
   let len = mine.length in
   let max_moves = mine.length * mine.height - mine.moves in
-  let rec aux i waterproof ((x,y) as pos) =
+  let rec aux i razors waterproof ((x,y) as pos) =
     if i > max_moves || waterproof < 0 then ()
     else if color.(y*len+x) < 0 then
       let waterproof =
         if y < mine.metadata.water then waterproof - 1 else mine.metadata.waterproof
       in
       let follow x y =
-        if x > 0 then aux (succ i) waterproof (x-1,y);
-        if x < mine.length - 1 then aux (succ i) waterproof (x+1,y);
-        if y > 0 then aux (succ i) waterproof (x,y-1);
-        if y < mine.length - 1 then aux (succ i) waterproof (x,y+1)
+        let razors =
+          match Grid.get mine pos with
+          | Beard -> pred razors
+          | Razor -> succ razors
+          | _ -> razors
+        in
+        let aux' = aux (succ i) razors waterproof in
+        if x > 0 then aux' (x-1,y);
+        if x < mine.length - 1 then aux' (x+1,y);
+        if y > 0 then aux' (x,y-1);
+        if y < mine.length - 1 then aux' (x,y+1)
       in
       match Grid.get mine pos with
-      | Wall | Target _ | Beard -> ()
+      | Wall | Target _ -> ()
+      | Beard when razors > 0->
+        color.(y*len+x) <- i;
+        follow x y
+      | Beard -> ()
       | Lambda | Earth | Robot | Empty | Razor ->
         color.(y*len+x) <- i;
         follow x y
@@ -75,7 +86,7 @@ let reachable mine =
       | Rock | Horock -> ()
       | Lift -> color.(y*len+x) <- i
   in
-  aux 0 mine.metadata.waterproof_current mine.robot;
+  aux 0 mine.metadata.razors mine.metadata.waterproof_current mine.robot;
   color
 
 let reach_ok mine =
