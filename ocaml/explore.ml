@@ -282,4 +282,5 @@ let _ =
   Printf.eprintf
     "\r[J[31mBest solution found: (%d in %d/%d moves):[0m %s\n"
     score (List.length path) (init_mine.length * init_mine.height)
-    (Moves.rev_path_to_string path)
+    (Moves.rev_path_to_string path);
+  print_endline (Moves.rev_path_to_string path)
